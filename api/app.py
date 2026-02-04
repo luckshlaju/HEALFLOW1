@@ -7,7 +7,11 @@ from models.surge_predictor import predict_surge_events, get_surge_statistics, g
 from models.resource_exchange import get_hospital_network, get_available_resources, get_my_shareable_resources, get_resource_requests
 from models.supply_chain import get_supply_inventory, get_supply_predictions, get_supply_statistics, get_usage_trend
 
-app = Flask(__name__, template_folder='../templates', static_folder='../static')
+import os
+
+app = Flask(__name__, 
+            template_folder=os.path.join(os.path.dirname(__file__), '../templates'),
+            static_folder=os.path.join(os.path.dirname(__file__), '../static'))
 app.secret_key = os.environ.get('SESSION_SECRET', 'dev-secret-key-change-in-production')
 
 if not os.path.exists('/tmp/hospital.db'):
