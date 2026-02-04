@@ -1,0 +1,388 @@
+/* ===== HealFlow Design System ===== */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+    --primary-color: #0d6efd;
+    --primary-dark: #0a58ca;
+    --secondary-color: #80deea;
+    --light-bg: #e0f7fa;
+    --dark-text: #1e293b;
+    --muted-text: #64748b;
+    --card-bg: #ffffff;
+    --card-border: rgba(0, 0, 0, 0.06);
+    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --card-shadow-hover: 0 12px 24px rgba(0, 0, 0, 0.1);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --sidebar-bg: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+    --sidebar-width: 260px;
+    --navbar-height: 56px;
+    --transition: 0.25s ease;
+}
+
+/* ===== Base ===== */
+body {
+    font-family: 'Plus Jakarta Sans', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--dark-text);
+    background-color: #f1f5f9;
+}
+
+/* ===== Dashboard layout ===== */
+#wrapper {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+}
+
+#sidebar-wrapper,
+.healflow-sidebar {
+    min-height: 100vh;
+    width: var(--sidebar-width);
+    transition: transform var(--transition), box-shadow var(--transition);
+    background: var(--sidebar-bg);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.08);
+}
+
+.sidebar-heading {
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.sidebar-heading a:hover {
+    opacity: 0.9;
+}
+
+.sidebar-nav .list-group-item {
+    border: none;
+    padding: 0.75rem 1.25rem;
+    transition: background var(--transition), padding-left var(--transition);
+    background: transparent !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-weight: 500;
+    border-left: 3px solid transparent;
+}
+
+.sidebar-nav .sidebar-link:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #fff !important;
+    padding-left: 1.5rem;
+}
+
+/* Active nav item: light blue background, white text – same on all pages */
+.sidebar-nav .sidebar-link.active,
+.sidebar-nav .list-group-item.active {
+    background: rgba(14, 165, 233, 0.35) !important;
+    color: #fff !important;
+    border-left: 3px solid #38bdf8;
+    font-weight: 600;
+}
+.sidebar-nav .sidebar-link.active i,
+.sidebar-nav .list-group-item.active i {
+    color: #fff !important;
+}
+
+#page-content-wrapper {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background: #f8fafc;
+}
+
+/* ===== Navbar ===== */
+.healflow-navbar {
+    background: var(--card-bg) !important;
+    box-shadow: 0 1px 0 var(--card-border);
+    min-height: var(--navbar-height);
+}
+
+.healflow-datetime {
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.healflow-badge-status {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+    color: #fff !important;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    border: none;
+}
+
+.pulse-dot {
+    font-size: 0.5rem;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* ===== Main content area ===== */
+.healflow-main {
+    flex: 1;
+}
+
+/* ===== Cards ===== */
+.healflow-card,
+.card.shadow-sm.healflow-card {
+    border-radius: var(--radius-md);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--card-shadow);
+    transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+    overflow: hidden;
+}
+
+.healflow-card:hover {
+    box-shadow: var(--card-shadow-hover);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+.healflow-quick-card:hover {
+    transform: translateY(-4px);
+}
+
+.healflow-stat-card .card-body,
+.healflow-kpi-card .card-body {
+    position: relative;
+}
+
+/* Prevent chart cards from growing – chart area stays fixed */
+.healflow-card .card-body .healflow-chart-wrap {
+    flex: 0 0 380px;
+}
+
+.healflow-kpi-card {
+    border: none !important;
+    border-radius: var(--radius-md);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+    transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.healflow-kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.healflow-stat-card {
+    border-radius: var(--radius-md);
+    transition: transform var(--transition);
+}
+
+.healflow-stat-card:hover {
+    transform: translateY(-2px);
+}
+
+/* ===== Tables ===== */
+.healflow-table {
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.healflow-table thead th {
+    font-weight: 600;
+    font-size: 0.8125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0.875rem 1rem;
+    border-bottom-width: 2px;
+}
+
+.healflow-table tbody td {
+    padding: 0.875rem 1rem;
+    vertical-align: middle;
+}
+
+/* ===== Form controls ===== */
+.healflow-input.form-control {
+    border-radius: var(--radius-sm);
+    border: 1px solid #e2e8f0;
+    padding: 0.5rem 0.75rem;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.healflow-input.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+}
+
+/* ===== Buttons (enhance existing) ===== */
+.btn {
+    transition: all var(--transition);
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-primary {
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.35);
+}
+
+/* ===== Legacy / compatibility ===== */
+.list-group-item {
+    border: none;
+    padding: 1rem 1.5rem;
+    transition: all 0.3s;
+}
+
+.list-group-item:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+
+.card {
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== Landing page ===== */
+.hero-section {
+    background: linear-gradient(135deg, #e0f7fa 0%, #80deea 50%, #4dd0e1 100%);
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.features-section {
+    background: #fff;
+}
+
+.about-section {
+    background: #f8fafc;
+}
+
+.team-section {
+    background: #fff;
+}
+
+.contact-section {
+    background: linear-gradient(135deg, #e0f7fa 0%, #80deea 100%);
+}
+
+.feature-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+footer {
+    margin-top: auto;
+}
+
+/* ===== Footer (base template) ===== */
+footer.text-center.py-2.bg-light {
+    background: #f1f5f9 !important;
+    border-top: 1px solid #e2e8f0;
+    font-size: 0.8125rem;
+    color: var(--muted-text);
+}
+
+/* ===== Chart containers – fixed height so plots don't extend indefinitely ===== */
+.healflow-chart-wrap {
+    height: 380px !important;
+    min-height: 380px !important;
+    max-height: 380px !important;
+    position: relative;
+    width: 100%;
+    overflow: hidden !important;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+/* Force all direct children (Plotly divs, canvas wrapper) to stay inside */
+.healflow-chart-wrap > * {
+    min-height: 0 !important;
+    max-height: 100% !important;
+    height: 100% !important;
+}
+
+/* Plotly charts – constrain inner plot divs */
+.healflow-chart-wrap .js-plotly-plot,
+.healflow-chart-wrap .plotly,
+.healflow-chart-wrap .svg-container {
+    min-height: 0 !important;
+    max-height: 100% !important;
+    height: 100% !important;
+}
+
+#predictionChart,
+#queueChart,
+#utilizationChart,
+#patientDistChart {
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+}
+
+/* Canvas charts (Chart.js) – strict size so they don't extend down */
+.healflow-chart-wrap canvas {
+    max-height: 100% !important;
+    height: 100% !important;
+    width: 100% !important;
+    display: block;
+    position: relative;
+    box-sizing: border-box;
+}
+
+#usageTrendChart,
+#trendChart {
+    max-height: 100% !important;
+    height: 100% !important;
+}
+
+/* Supply Chain chart – strict fixed height so it never extends */
+.supply-chain-chart,
+.supply-chain-chart-inner {
+    min-height: 380px !important;
+    max-height: 380px !important;
+    height: 380px !important;
+}
+.supply-chain-chart-inner canvas {
+    max-height: 380px !important;
+    height: 380px !important;
+}
+
+/* ===== Mobile ===== */
+@media (max-width: 768px) {
+    #sidebar-wrapper,
+    .healflow-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 1040;
+        margin-left: calc(-1 * var(--sidebar-width));
+        box-shadow: none;
+    }
+
+    #wrapper.toggled #sidebar-wrapper,
+    #wrapper.toggled .healflow-sidebar {
+        margin-left: 0;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .healflow-main {
+        padding: 1rem !important;
+    }
+}

@@ -1,0 +1,122 @@
+{% extends "layout_dashboard.html" %}
+{% block nav_title %}Queue Simulation (M/M/c Model){% endblock %}
+
+{% block main_content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm healflow-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-calculator me-2"></i>Queue Performance Simulator
+                </h5>
+                <p class="text-muted">Simulate waiting times and queue performance using M/M/c queuing theory</p>
+                
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Arrival Rate (λ) - patients/hour</label>
+                        <input type="number" class="form-control healflow-input" id="arrivalRate" value="20" min="1">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Service Rate (μ) - patients/hour/server</label>
+                        <input type="number" class="form-control healflow-input" id="serviceRate" value="8" min="1">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Number of Servers (c)</label>
+                        <input type="number" class="form-control healflow-input" id="servers" value="3" min="1">
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary mt-3" onclick="simulateQueue()">
+                    <i class="fas fa-play me-2"></i>Simulate Queue
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center healflow-card healflow-stat-card">
+            <div class="card-body">
+                <h6 class="text-muted">Utilization Factor</h6>
+                <h3 id="utilization">-</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center healflow-card healflow-stat-card">
+            <div class="card-body">
+                <h6 class="text-muted">Avg Wait Time (hours)</h6>
+                <h3 id="waitTime">-</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center healflow-card healflow-stat-card">
+            <div class="card-body">
+                <h6 class="text-muted">Avg Queue Length</h6>
+                <h3 id="queueLength">-</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm text-center healflow-card healflow-stat-card">
+            <div class="card-body">
+                <h6 class="text-muted">Prob. No Wait</h6>
+                <h3 id="probNoWait">-</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm healflow-card">
+            <div class="card-body">
+                <h5 class="card-title">Queue Performance Chart</h5>
+                <div class="healflow-chart-wrap"><div id="queueChart"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function simulateQueue() {
+    const arrivalRate = parseFloat(document.getElementById('arrivalRate').value);
+    const serviceRate = parseFloat(document.getElementById('serviceRate').value);
+    const servers = parseInt(document.getElementById('servers').value);
+    
+    fetch('/api/queue/simulate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({arrival_rate: arrivalRate, service_rate: serviceRate, servers: servers})
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('utilization').textContent = data.utilization;
+        document.getElementById('waitTime').textContent = data.avg_wait_time;
+        document.getElementById('queueLength').textContent = data.avg_queue_length;
+        document.getElementById('probNoWait').textContent = data.prob_no_wait || 0;
+        
+        const chartData = [{
+            x: ['Utilization', 'Avg Wait Time', 'Queue Length', 'Time in System'],
+            y: [data.utilization, data.avg_wait_time, data.avg_queue_length, data.avg_time_in_system],
+            type: 'bar',
+            marker: {color: ['#0d6efd', '#6610f2', '#d63384', '#fd7e14']}
+        }];
+        
+        const layout = {
+            yaxis: { title: 'Value' },
+            title: 'Queue Metrics Overview',
+            height: 380,
+            margin: { t: 50, r: 40, b: 60, l: 60 },
+            autosize: false
+        };
+        const config = { responsive: true };
+        Plotly.newPlot('queueChart', chartData, layout, config);
+    });
+}
+</script>
+{% endblock %}

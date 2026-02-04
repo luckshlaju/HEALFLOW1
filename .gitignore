@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+venv_new/
+
+# Local DB (recreate with app or seed script)
+*.db
+hospital.db
+
+# Env files
+.env
+.env.local
+.env.production
+
+# OS
+.DS_Store
+
+# Vercel
+.vercel/

@@ -1,0 +1,117 @@
+{% extends "layout_dashboard.html" %}
+{% block nav_title %}Bed & Staff Allocation{% endblock %}
+
+{% block main_content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm healflow-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-cogs me-2"></i>Smart Resource Optimization
+                </h5>
+                <p class="text-muted">AI-powered recommendations for optimal bed and staff allocation</p>
+                <button class="btn btn-primary" onclick="optimizeAllocation()">
+                    <i class="fas fa-magic me-2"></i>Auto Optimize
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm healflow-card">
+            <div class="card-body">
+                <h5 class="card-title">Department Bed Allocation</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover healflow-table" id="allocationTable">
+                        <thead class="table-primary">
+                            <tr>
+                                <th>Department</th>
+                                <th>Total Beds</th>
+                                <th>Occupied</th>
+                                <th>Available</th>
+                                <th>Utilization</th>
+                                <th>Recommendation</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allocationTableBody">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">Click "Auto Optimize" to generate recommendations</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-sm healflow-card">
+            <div class="card-body">
+                <h5 class="card-title">Bed Utilization Rate</h5>
+                <div class="healflow-chart-wrap"><div id="utilizationChart"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function optimizeAllocation() {
+    fetch('/api/beds/allocate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        const tbody = document.getElementById('allocationTableBody');
+        tbody.innerHTML = '';
+        
+        const departments = [];
+        const utilizations = [];
+        
+        data.forEach(dept => {
+            const utilizationClass = dept.utilization > 85 ? 'text-danger' : dept.utilization > 70 ? 'text-warning' : 'text-success';
+            const row = `
+                <tr>
+                    <td><strong>${dept.department}</strong></td>
+                    <td>${dept.total_beds}</td>
+                    <td>${dept.occupied_beds}</td>
+                    <td>${dept.available_beds}</td>
+                    <td><span class="${utilizationClass}">${dept.utilization}%</span></td>
+                    <td>${dept.recommendation}</td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+            
+            departments.push(dept.department);
+            utilizations.push(dept.utilization);
+        });
+        
+        const chartData = [{
+            x: departments,
+            y: utilizations,
+            type: 'bar',
+            marker: {
+                color: utilizations.map(u => u > 85 ? '#dc3545' : u > 70 ? '#ffc107' : '#198754')
+            }
+        }];
+        
+        const layout = {
+            yaxis: { title: 'Utilization (%)', range: [0, 100] },
+            title: 'Department Bed Utilization',
+            height: 380,
+            margin: { t: 50, r: 40, b: 80, l: 60 },
+            autosize: false
+        };
+        const config = { responsive: true };
+        Plotly.newPlot('utilizationChart', chartData, layout, config);
+    });
+}
+</script>
+{% endblock %}

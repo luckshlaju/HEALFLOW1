@@ -1,0 +1,120 @@
+{% extends "layout_dashboard.html" %}
+{% block nav_title %}System Overview{% endblock %}
+
+{% block main_content %}
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm healflow-card healflow-kpi-card bg-primary text-white">
+            <div class="card-body">
+                <h6 class="card-title">Total Patients Today</h6>
+                <h2 id="totalPatients">-</h2>
+                <i class="fas fa-users fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm healflow-card healflow-kpi-card bg-info text-white">
+            <div class="card-body">
+                <h6 class="card-title">Avg Waiting Time</h6>
+                <h2 id="avgWait">-</h2>
+                <i class="fas fa-clock fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm healflow-card healflow-kpi-card bg-success text-white">
+            <div class="card-body">
+                <h6 class="card-title">Bed Occupancy</h6>
+                <h2 id="bedOccupancy">-</h2>
+                <i class="fas fa-bed fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm healflow-card healflow-kpi-card bg-warning text-white">
+            <div class="card-body">
+                <h6 class="card-title">Staff Efficiency</h6>
+                <h2 id="staffEfficiency">-</h2>
+                <i class="fas fa-user-md fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm healflow-card">
+            <div class="card-body">
+                <h5 class="card-title">Patient Distribution by Department</h5>
+                <div class="healflow-chart-wrap"><div id="patientDistChart"></div></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm healflow-card">
+            <div class="card-body">
+                <h5 class="card-title">Resource Utilization Trend</h5>
+                <div class="healflow-chart-wrap"><canvas id="trendChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function loadOverviewStats() {
+    fetch('/api/overview/stats')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('totalPatients').textContent = data.total_patients;
+            document.getElementById('avgWait').textContent = data.avg_wait_time + ' min';
+            document.getElementById('bedOccupancy').textContent = data.bed_occupancy + '%';
+            document.getElementById('staffEfficiency').textContent = data.staff_efficiency + '%';
+            
+            const pieData = [{
+                values: data.patient_distribution.map(d => d.count),
+                labels: data.patient_distribution.map(d => d.department),
+                type: 'pie',
+                hole: 0.4
+            }];
+            
+            const pieLayout = {
+                showlegend: true,
+                height: 380,
+                margin: { t: 20, r: 20, b: 20, l: 20 },
+                autosize: false
+            };
+            Plotly.newPlot('patientDistChart', pieData, pieLayout, { responsive: false });
+            
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Bed Occupancy %',
+                        data: [65, 72, 68, 75, 80, 78, 70],
+                        borderColor: '#0d6efd',
+                        tension: 0.4
+                    }, {
+                        label: 'Staff Utilization %',
+                        data: [70, 75, 73, 78, 82, 80, 75],
+                        borderColor: '#198754',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' }
+                    }
+                }
+            });
+        });
+}
+
+window.addEventListener('load', loadOverviewStats);
+</script>
+{% endblock %}
