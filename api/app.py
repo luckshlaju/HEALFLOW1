@@ -10,7 +10,7 @@ from models.supply_chain import get_supply_inventory, get_supply_predictions, ge
 app = Flask(__name__, template_folder='../templates', static_folder='../static')
 app.secret_key = os.environ.get('SESSION_SECRET', 'dev-secret-key-change-in-production')
 
-if not os.path.exists('hospital.db'):
+if not os.path.exists('/tmp/hospital.db'):
     init_db()
 
 @app.route('/')

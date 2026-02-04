@@ -5,7 +5,7 @@ When real data is available, replace init_db() with CSV/API load and keep get_* 
 import sqlite3
 from datetime import datetime, timedelta
 
-DATABASE = 'hospital.db'
+DATABASE = '/tmp/hospital.db'
 
 # Fixed seed-like values for reproducible data (no random)
 DEPARTMENTS_FIXED = [
