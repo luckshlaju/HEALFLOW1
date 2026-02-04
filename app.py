@@ -1,239 +1,309 @@
 from flask import Flask, render_template, jsonify, request
 import os
-from models.database import init_db, get_patient_data, get_department_data, get_bed_allocation, get_total_patients_today, get_staff_count
-from models.inflow_model import predict_patient_inflow, get_all_departments_prediction, get_prediction_dates
-from models.queue_model import mmc_queue_simulation, calculate_probability_no_wait
-from models.surge_predictor import predict_surge_events, get_surge_statistics, get_weather_impact
-from models.resource_exchange import get_hospital_network, get_available_resources, get_my_shareable_resources, get_resource_requests
-from models.supply_chain import get_supply_inventory, get_supply_predictions, get_supply_statistics, get_usage_trend
+import traceback
+
+from models.database import (
+    init_db,
+    get_patient_data,
+    get_department_data,
+    get_bed_allocation,
+    get_total_patients_today,
+)
+
+from models.inflow_model import (
+    predict_patient_inflow,
+    get_all_departments_prediction,
+    get_prediction_dates,
+)
+
+from models.queue_model import (
+    mmc_queue_simulation,
+    calculate_probability_no_wait,
+)
+
+from models.surge_predictor import (
+    predict_surge_events,
+    get_surge_statistics,
+    get_weather_impact,
+)
+
+from models.resource_exchange import (
+    get_hospital_network,
+    get_available_resources,
+    get_my_shareable_resources,
+    get_resource_requests,
+)
+
+from models.supply_chain import (
+    get_supply_inventory,
+    get_supply_predictions,
+    get_supply_statistics,
+    get_usage_trend,
+)
+
+# -----------------------------------------------------------------------------
+# Flask App Setup
+# -----------------------------------------------------------------------------
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SESSION_SECRET', 'dev-secret-key-change-in-production')
+app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key-change-in-production")
 
-if not os.path.exists('hospital.db'):
-    init_db()
+# -----------------------------------------------------------------------------
+# Database Initialization (safe for local + Vercel)
+# -----------------------------------------------------------------------------
 
-@app.route('/')
+DB_PATH = "/tmp/hospital.db" if os.environ.get("VERCEL") else "hospital.db"
+
+if not os.path.exists(DB_PATH):
+    try:
+        init_db()
+    except Exception as e:
+        print("DB init failed:", e)
+
+# -----------------------------------------------------------------------------
+# Page Routes
+# -----------------------------------------------------------------------------
+
+@app.route("/")
 def index():
-    """Landing page"""
-    return render_template('index.html')
+    return render_template("index.html")
 
-@app.route('/dashboard')
+
+@app.route("/dashboard")
 def dashboard():
-    """Main dashboard"""
-    return render_template('dashboard.html')
+    return render_template("dashboard.html")
 
-@app.route('/prediction')
+
+@app.route("/prediction")
 def prediction():
-    """Patient flow prediction page"""
-    return render_template('prediction.html')
+    return render_template("prediction.html")
 
-@app.route('/queue')
+
+@app.route("/queue")
 def queue():
-    """Queue simulation page"""
-    return render_template('queue.html')
+    return render_template("queue.html")
 
-@app.route('/allocation')
+
+@app.route("/allocation")
 def allocation():
-    """Bed and staff allocation page"""
-    return render_template('allocation.html')
+    return render_template("allocation.html")
 
-@app.route('/overview')
+
+@app.route("/overview")
 def overview():
-    """System overview page"""
-    return render_template('overview.html')
+    return render_template("overview.html")
 
-@app.route('/surge-predictor')
+
+@app.route("/surge-predictor")
 def surge_predictor():
-    """Emergency Surge Predictor page"""
-    return render_template('surge_predictor.html')
+    return render_template("surge_predictor.html")
 
-@app.route('/resource-exchange')
+
+@app.route("/resource-exchange")
 def resource_exchange():
-    """Resource Exchange Network page"""
-    return render_template('resource_exchange.html')
+    return render_template("resource_exchange.html")
 
-@app.route('/supply-chain')
+
+@app.route("/supply-chain")
 def supply_chain():
-    """Supply Chain Assistant page"""
-    return render_template('supply_chain.html')
+    return render_template("supply_chain.html")
 
-@app.route('/api/predict', methods=['POST'])
+# -----------------------------------------------------------------------------
+# API Routes
+# -----------------------------------------------------------------------------
+
+@app.route("/api/predict", methods=["POST"])
 def api_predict():
-    """API endpoint for patient flow prediction"""
-    data = request.get_json()
-    department = data.get('department', 'Emergency')
-    
-    predictions = predict_patient_inflow(department)
-    dates = get_prediction_dates()
-    
+    data = request.get_json(force=True)
+    department = data.get("department", "Emergency")
+
     return jsonify({
-        'department': department,
-        'dates': dates,
-        'predictions': predictions
+        "department": department,
+        "dates": get_prediction_dates(),
+        "predictions": predict_patient_inflow(department),
     })
 
-@app.route('/api/predict/all', methods=['GET'])
+
+@app.route("/api/predict/all", methods=["GET"])
 def api_predict_all():
-    """Get predictions for all departments"""
-    predictions = get_all_departments_prediction()
-    dates = get_prediction_dates()
-    
     return jsonify({
-        'dates': dates,
-        'predictions': predictions
+        "dates": get_prediction_dates(),
+        "predictions": get_all_departments_prediction(),
     })
 
-@app.route('/api/queue/simulate', methods=['POST'])
+
+@app.route("/api/queue/simulate", methods=["POST"])
 def api_queue_simulate():
-    """API endpoint for queue simulation"""
-    data = request.get_json()
-    
-    arrival_rate = float(data.get('arrival_rate', 20))
-    service_rate = float(data.get('service_rate', 5))
-    servers = int(data.get('servers', 3))
-    
+    data = request.get_json(force=True)
+
+    arrival_rate = float(data.get("arrival_rate", 20))
+    service_rate = float(data.get("service_rate", 5))
+    servers = int(data.get("servers", 3))
+
     results = mmc_queue_simulation(arrival_rate, service_rate, servers)
-    prob_no_wait = calculate_probability_no_wait(arrival_rate, service_rate, servers)
-    
-    results['prob_no_wait'] = prob_no_wait
-    
+    results["prob_no_wait"] = calculate_probability_no_wait(
+        arrival_rate, service_rate, servers
+    )
+
     return jsonify(results)
 
-@app.route('/api/beds/allocate', methods=['POST'])
+# -----------------------------------------------------------------------------
+# ✅ FIXED: Bed Allocation API (NO MORE 500 / JSON ERRORS)
+# -----------------------------------------------------------------------------
+
+@app.route("/api/beds/allocate", methods=["POST"])
 def api_allocate_beds():
-    """API endpoint for bed allocation optimization"""
-    bed_data = get_bed_allocation()
-    
-    recommendations = []
-    for dept, total, occupied in bed_data:
-        utilization = (occupied / total) * 100 if total > 0 else 0
-        
-        if utilization > 85:
-            recommendation = f"Add 5-10 beds (Critical: {utilization:.1f}% occupancy)"
-        elif utilization > 70:
-            recommendation = f"Consider adding 3-5 beds ({utilization:.1f}% occupancy)"
-        elif utilization < 40:
-            recommendation = f"Optimize usage or reallocate ({utilization:.1f}% occupancy)"
-        else:
-            recommendation = f"Optimal ({utilization:.1f}% occupancy)"
-        
-        recommendations.append({
-            'department': dept,
-            'total_beds': total,
-            'occupied_beds': occupied,
-            'available_beds': total - occupied,
-            'utilization': round(utilization, 1),
-            'recommendation': recommendation
-        })
-    
-    return jsonify(recommendations)
+    try:
+        bed_data = get_bed_allocation()
 
-@app.route('/api/overview/stats', methods=['GET'])
+        if not bed_data:
+            return jsonify({
+                "error": "No bed data found in database",
+                "recommendations": []
+            })
+
+        recommendations = []
+
+        for row in bed_data:
+            if len(row) != 3:
+                return jsonify({
+                    "error": "Invalid bed data format",
+                    "row": row
+                }), 500
+
+            dept, total, occupied = row
+            utilization = (occupied / total) * 100 if total > 0 else 0
+
+            if utilization > 85:
+                rec = f"Add 5–10 beds (Critical: {utilization:.1f}%)"
+            elif utilization > 70:
+                rec = f"Consider adding 3–5 beds ({utilization:.1f}%)"
+            elif utilization < 40:
+                rec = f"Reallocate beds ({utilization:.1f}%)"
+            else:
+                rec = f"Optimal ({utilization:.1f}%)"
+
+            recommendations.append({
+                "department": dept,
+                "total_beds": total,
+                "occupied_beds": occupied,
+                "available_beds": total - occupied,
+                "utilization": round(utilization, 1),
+                "recommendation": rec,
+            })
+
+        return jsonify(recommendations)
+
+    except Exception as e:
+        print(traceback.format_exc())
+        return jsonify({
+            "error": "Bed allocation failed",
+            "details": str(e)
+        }), 500
+
+# -----------------------------------------------------------------------------
+# Overview API
+# -----------------------------------------------------------------------------
+
+@app.route("/api/overview/stats", methods=["GET"])
 def api_overview_stats():
-    """API endpoint for overview statistics (derived from real DB data)."""
-    bed_data = get_bed_allocation()
-    total_beds = sum([total for _, total, _ in bed_data])
-    occupied_beds = sum([occupied for _, _, occupied in bed_data])
-    bed_occupancy = (occupied_beds / total_beds * 100) if total_beds > 0 else 0
+    bed_data = get_bed_allocation() or []
 
-    total_patients = get_total_patients_today()
-    # Deterministic: wait time estimate from occupancy (higher occupancy -> longer wait)
+    total_beds = sum(total for _, total, _ in bed_data) if bed_data else 0
+    occupied_beds = sum(occ for _, _, occ in bed_data) if bed_data else 0
+    bed_occupancy = (occupied_beds / total_beds * 100) if total_beds else 0
+
     avg_wait_time = int(12 + (bed_occupancy / 100) * 28)
     avg_wait_time = max(10, min(45, avg_wait_time))
-    # Staff efficiency from bed utilization (realistic band)
+
     staff_efficiency = int(78 + (1 - bed_occupancy / 100) * 14)
     staff_efficiency = max(72, min(95, staff_efficiency))
 
-    patient_distribution = []
-    for dept, count in get_patient_data():
-        patient_distribution.append({'department': dept, 'count': count})
+    patient_distribution = [
+        {"department": dept, "count": count}
+        for dept, count in get_patient_data()
+    ]
 
     return jsonify({
-        'total_patients': total_patients,
-        'avg_wait_time': avg_wait_time,
-        'bed_occupancy': round(bed_occupancy, 1),
-        'staff_efficiency': staff_efficiency,
-        'patient_distribution': patient_distribution
+        "total_patients": get_total_patients_today(),
+        "avg_wait_time": avg_wait_time,
+        "bed_occupancy": round(bed_occupancy, 1),
+        "staff_efficiency": staff_efficiency,
+        "patient_distribution": patient_distribution,
     })
 
-@app.route('/api/departments', methods=['GET'])
-def api_departments():
-    """Get all departments"""
-    dept_data = get_department_data()
-    departments = []
-    
-    for name, total_beds, occupied_beds in dept_data:
-        departments.append({
-            'name': name,
-            'total_beds': total_beds,
-            'occupied_beds': occupied_beds,
-            'available_beds': total_beds - occupied_beds
-        })
-    
-    return jsonify(departments)
+# -----------------------------------------------------------------------------
+# Surge APIs (endpoint-safe for Vercel)
+# -----------------------------------------------------------------------------
 
-@app.route('/api/surge/events', methods=['GET'])
+@app.route(
+    "/api/surge/events",
+    methods=["GET"],
+    endpoint="api_surge_events_v1"
+)
 def api_surge_events():
-    """Get surge prediction events"""
-    events = predict_surge_events()
-    return jsonify(events)
+    return jsonify(predict_surge_events())
 
-@app.route('/api/surge/stats', methods=['GET'])
+
+@app.route(
+    "/api/surge/stats",
+    methods=["GET"],
+    endpoint="api_surge_stats_v1"
+)
 def api_surge_stats():
-    """Get surge statistics"""
     stats = get_surge_statistics()
-    weather = get_weather_impact()
-    stats['weather'] = weather
+    stats["weather"] = get_weather_impact()
     return jsonify(stats)
 
-@app.route('/api/resources/network', methods=['GET'])
+# -----------------------------------------------------------------------------
+# Resource Exchange APIs
+# -----------------------------------------------------------------------------
+
+@app.route("/api/resources/network", methods=["GET"])
 def api_resource_network():
-    """Get hospital network"""
-    hospitals = get_hospital_network()
-    return jsonify(hospitals)
+    return jsonify(get_hospital_network())
 
-@app.route('/api/resources/available', methods=['GET'])
+
+@app.route("/api/resources/available", methods=["GET"])
 def api_resources_available():
-    """Get available resources from other hospitals"""
-    resources = get_available_resources()
-    return jsonify(resources)
+    return jsonify(get_available_resources())
 
-@app.route('/api/resources/mine', methods=['GET'])
+
+@app.route("/api/resources/mine", methods=["GET"])
 def api_my_resources():
-    """Get my shareable resources"""
-    resources = get_my_shareable_resources()
-    return jsonify(resources)
+    return jsonify(get_my_shareable_resources())
 
-@app.route('/api/resources/requests', methods=['GET'])
+
+@app.route("/api/resources/requests", methods=["GET"])
 def api_resource_requests():
-    """Get resource requests"""
-    requests = get_resource_requests()
-    return jsonify(requests)
+    return jsonify(get_resource_requests())
 
-@app.route('/api/supply/inventory', methods=['GET'])
+# -----------------------------------------------------------------------------
+# Supply Chain APIs
+# -----------------------------------------------------------------------------
+
+@app.route("/api/supply/inventory", methods=["GET"])
 def api_supply_inventory():
-    """Get supply inventory"""
-    supplies = get_supply_inventory()
-    return jsonify(supplies)
+    return jsonify(get_supply_inventory())
 
-@app.route('/api/supply/predictions', methods=['GET'])
+
+@app.route("/api/supply/predictions", methods=["GET"])
 def api_supply_predictions():
-    """Get supply shortage predictions"""
-    predictions = get_supply_predictions()
-    return jsonify(predictions)
+    return jsonify(get_supply_predictions())
 
-@app.route('/api/supply/stats', methods=['GET'])
+
+@app.route("/api/supply/stats", methods=["GET"])
 def api_supply_stats():
-    """Get supply statistics"""
-    stats = get_supply_statistics()
-    return jsonify(stats)
+    return jsonify(get_supply_statistics())
 
-@app.route('/api/supply/trend', methods=['GET'])
+
+@app.route("/api/supply/trend", methods=["GET"])
 def api_supply_trend():
-    """Get usage trend"""
-    trend = get_usage_trend()
-    return jsonify(trend)
+    return jsonify(get_usage_trend())
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+# -----------------------------------------------------------------------------
+# Local Development Entry
+# -----------------------------------------------------------------------------
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
