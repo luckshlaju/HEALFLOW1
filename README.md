@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # HealFlow – AI-Based Hospital Flow Optimization System
 
 
@@ -108,5 +107,4 @@ HealFlow uses a modular structure:
 
 *HealFlow – Predict. Optimize. Care.*
 =======
-# HEALFLOW1
->>>>>>> 304d6ea1623829c81789cff986293bb35184d3ed
+# HEALFLOW
