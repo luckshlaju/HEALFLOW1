@@ -1,6 +1,6 @@
 """
 Hospital database: uses fixed seed for reproducible, realistic data.
-When real data is available, replace init_db() with CSV/API load and keep get_* as-is.
+Serverless-safe (Vercel) and localhost-safe.
 """
 
 import os
@@ -8,18 +8,16 @@ import sqlite3
 from datetime import datetime, timedelta
 
 # -----------------------------------------------------------------------------
-# Database Path (LOCAL + VERCEL SAFE)
+# Environment detection (RELIABLE)
 # -----------------------------------------------------------------------------
+
+IS_VERCEL = bool(os.environ.get("VERCEL_ENV") or os.environ.get("NOW_REGION"))
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
-DB_PATH = (
-    "/tmp/hospital.db"
-    if os.environ.get("VERCEL")
-    else os.path.join(BASE_DIR, "hospital.db")
-)
+DB_PATH = "/tmp/hospital.db" if IS_VERCEL else os.path.join(BASE_DIR, "hospital.db")
 
-# Ensure directory exists (important for safety)
+# Ensure directory exists (safe even if already exists)
 os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 # -----------------------------------------------------------------------------
@@ -44,20 +42,26 @@ PATIENT_NAMES = [
 # -----------------------------------------------------------------------------
 
 def _deterministic_index(seed, i, mod):
-    """Deterministic 'random' for reproducibility."""
     return (seed * 31 + i) % mod
 
 
 def _connect():
-    """Create SQLite connection safely."""
     return sqlite3.connect(DB_PATH)
+
+
+def ensure_db():
+    """
+    Ensure DB exists and is initialized.
+    CRITICAL for Vercel serverless cold starts.
+    """
+    if not os.path.exists(DB_PATH):
+        init_db()
 
 # -----------------------------------------------------------------------------
 # Initialization
 # -----------------------------------------------------------------------------
 
 def init_db():
-    """Initialize the database with realistic, reproducible data."""
     conn = _connect()
     cursor = conn.cursor()
 
@@ -116,8 +120,7 @@ def init_db():
     for i in range(50):
         dept = dept_names[_deterministic_index(42, i, len(dept_names))]
         name = PATIENT_NAMES[_deterministic_index(7, i, len(PATIENT_NAMES))]
-        hours_ago = 6 + (i * 17) % 42
-        admission = now - timedelta(hours=hours_ago)
+        admission = now - timedelta(hours=(6 + (i * 17) % 42))
         status = ["Admitted", "Under Treatment", "Recovery"][_deterministic_index(3, i, 3)]
 
         cursor.execute(
@@ -127,12 +130,12 @@ def init_db():
 
     for dept_name, total, occupied in DEPARTMENTS_FIXED:
         for i in range(1, total + 1):
-            status = "Occupied" if i <= occupied else "Available"
-            patient_id = i if status == "Occupied" else None
+            bed_status = "Occupied" if i <= occupied else "Available"
+            patient_id = i if bed_status == "Occupied" else None
 
             cursor.execute(
                 "INSERT INTO beds (department, bed_number, status, patient_id) VALUES (?, ?, ?, ?)",
-                (dept_name, f"{dept_name[:3].upper()}-{i:02d}", status, patient_id),
+                (dept_name, f"{dept_name[:3].upper()}-{i:02d}", bed_status, patient_id),
             )
 
     staff_roles = ["Doctor", "Nurse", "Technician"]
@@ -154,10 +157,11 @@ def init_db():
     conn.close()
 
 # -----------------------------------------------------------------------------
-# Query Functions
+# Query Functions (ALL serverless-safe)
 # -----------------------------------------------------------------------------
 
 def get_patient_data():
+    ensure_db()
     conn = _connect()
     cursor = conn.cursor()
     cursor.execute("SELECT department, COUNT(*) FROM patients GROUP BY department")
@@ -167,6 +171,7 @@ def get_patient_data():
 
 
 def get_department_data():
+    ensure_db()
     conn = _connect()
     cursor = conn.cursor()
     cursor.execute("SELECT name, total_beds, occupied_beds FROM departments")
@@ -176,6 +181,7 @@ def get_department_data():
 
 
 def get_bed_allocation():
+    ensure_db()
     conn = _connect()
     cursor = conn.cursor()
     cursor.execute("""
@@ -191,6 +197,7 @@ def get_bed_allocation():
 
 
 def get_total_patients_today():
+    ensure_db()
     conn = _connect()
     cursor = conn.cursor()
     today = datetime.now().date()
@@ -203,6 +210,7 @@ def get_total_patients_today():
 
 
 def get_staff_count():
+    ensure_db()
     conn = _connect()
     cursor = conn.cursor()
     cursor.execute("SELECT department, COUNT(*) FROM staff GROUP BY department")
