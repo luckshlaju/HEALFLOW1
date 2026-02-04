@@ -1,5 +1,12 @@
-from flask import Flask, render_template, jsonify, request
+import sys
 import os
+
+# Ensure project root is on Python path (Vercel fix)
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from flask import Flask, render_template, jsonify, request
+
+
 
 from models.database import (
     init_db,
