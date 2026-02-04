@@ -93,11 +93,16 @@ HealFlow uses a modular structure:
 
 ## Authors
 
- **Luckshvadhan B**– Information Technology Student
+ **Luckshvadhan B** 
+
  **Harikishanth R**
+
  **Mohamed Mubashir**
+
  **Mohamed Ashiq Omar**
+
  **Naveen Raj** 
+ (Information Technology Students)
 
 **Team CheatCode** – Healthcare Innovation Hackathon
 
