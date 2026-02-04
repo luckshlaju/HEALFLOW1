@@ -6,6 +6,51 @@ Serverless-safe (Vercel) and localhost-safe.
 import os
 import sqlite3
 from datetime import datetime, timedelta
+# FORCE demo mode on Vercel (no DB, no filesystem)
+FORCE_DEMO = True if os.environ.get("VERCEL") is not None else False
+if FORCE_DEMO:
+    def get_bed_allocation():
+        return [
+            ("Emergency", 30, 24),
+            ("Cardiology", 25, 18),
+            ("Orthopedics", 20, 14),
+            ("Pediatrics", 35, 26),
+            ("General Medicine", 40, 31),
+        ]
+
+    def get_patient_data():
+        return [
+            ("Emergency", 42),
+            ("Cardiology", 31),
+            ("Orthopedics", 28),
+            ("Pediatrics", 36),
+            ("General Medicine", 49),
+        ]
+
+    def get_department_data():
+        return [
+            ("Emergency", 30, 24),
+            ("Cardiology", 25, 18),
+            ("Orthopedics", 20, 14),
+            ("Pediatrics", 35, 26),
+            ("General Medicine", 40, 31),
+        ]
+
+    def get_total_patients_today():
+        return 186
+
+    def get_staff_count():
+        return [
+            ("Emergency", 18),
+            ("Cardiology", 14),
+            ("Orthopedics", 12),
+            ("Pediatrics", 16),
+            ("General Medicine", 20),
+        ]
+
+    # ⛔ STOP loading the rest of the file on Vercel
+    raise SystemExit
+
 
 # -----------------------------------------------------------------------------
 # Environment detection (RELIABLE)
