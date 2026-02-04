@@ -3,25 +3,22 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# Virtual environments
 venv/
 venv_new/
 
-# Local DB (recreate with app or seed script)
+# Local database (do not deploy)
 *.db
 hospital.db
 
-# Env files
+# Environment variables
 .env
 .env.local
 .env.production
 
-# OS
+# OS files
 .DS_Store
 
 # Vercel
 .vercel/
-venv/
-venv_new/
-__pycache__/
-*.pyc
-.env
