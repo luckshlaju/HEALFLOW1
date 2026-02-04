@@ -1,9 +1,6 @@
 <<<<<<< HEAD
 # HealFlow – AI-Based Hospital Flow Optimization System
 
-HealFlow is an AI-powered hospital management system that predicts patient flow, optimizes queues, and smartly allocates beds in real time.
-
-**Live demo:** [heal-flow.vercel.app](https://heal-flow.vercel.app)
 
 ---
 
