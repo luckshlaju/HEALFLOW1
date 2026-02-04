@@ -96,65 +96,115 @@
 
 {% block extra_js %}
 <script>
+function safe(val) { return (val !== undefined && val !== null && val !== '') ? val : '—'; }
+
 function loadSupplyData() {
     fetch('/api/supply/stats')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) { console.log('[Supply] /api/supply/stats failed:', response.status); return null; }
+            return response.json();
+        })
         .then(stats => {
-            document.getElementById('totalItems').textContent = stats.total_items;
-            document.getElementById('criticalItems').textContent = stats.critical_items;
-            document.getElementById('autoOrders').textContent = stats.auto_orders_pending;
-            document.getElementById('monthlySpend').textContent = stats.monthly_spend;
+            if (!stats) {
+                document.getElementById('totalItems').textContent = '—';
+                document.getElementById('criticalItems').textContent = '—';
+                document.getElementById('autoOrders').textContent = '—';
+                document.getElementById('monthlySpend').textContent = '—';
+                return;
+            }
+            console.log('[Supply] stats', stats);
+            document.getElementById('totalItems').textContent = safe(stats.total_items);
+            document.getElementById('criticalItems').textContent = safe(stats.critical_items);
+            document.getElementById('autoOrders').textContent = safe(stats.auto_orders_pending);
+            document.getElementById('monthlySpend').textContent = safe(stats.monthly_spend);
+        })
+        .catch(err => {
+            console.log('[Supply] stats error', err);
+            document.getElementById('totalItems').textContent = '—';
+            document.getElementById('criticalItems').textContent = '—';
+            document.getElementById('autoOrders').textContent = '—';
+            document.getElementById('monthlySpend').textContent = '—';
         });
 
     fetch('/api/supply/inventory')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) { console.log('[Supply] /api/supply/inventory failed:', response.status); return null; }
+            return response.json();
+        })
         .then(supplies => {
             const tbody = document.getElementById('inventoryTableBody');
+            if (!supplies || !Array.isArray(supplies)) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No inventory data available.</td></tr>';
+                return;
+            }
+            if (supplies.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No inventory items to display.</td></tr>';
+                return;
+            }
+            console.log('[Supply] inventory', supplies);
             tbody.innerHTML = supplies.map(s => {
-                const statusClass = s.status === 'Critical' ? 'danger' : s.status === 'Low' ? 'warning' : 'success';
-                return `
-                    <tr>
-                        <td>
-                            <strong>${s.name}</strong>
-                            <br><small class="text-muted">${s.supplier}</small>
-                        </td>
-                        <td>${s.current_stock} / ${s.min_required}</td>
-                        <td><span class="badge bg-${statusClass}">${s.days_remaining} days</span></td>
-                        <td>
-                            <span class="badge bg-${statusClass}">${s.status}</span>
-                            ${s.auto_order ? '<i class="fas fa-shopping-cart text-primary ms-2" title="Auto-order enabled"></i>' : ''}
-                        </td>
-                    </tr>
-                `;
+                const statusClass = (s.status === 'Critical') ? 'danger' : (s.status === 'Low') ? 'warning' : 'success';
+                return '<tr>' +
+                    '<td><strong>' + safe(s.name) + '</strong><br><small class="text-muted">' + safe(s.supplier) + '</small></td>' +
+                    '<td>' + safe(s.current_stock) + ' / ' + safe(s.min_required) + '</td>' +
+                    '<td><span class="badge bg-' + statusClass + '">' + safe(s.days_remaining) + ' days</span></td>' +
+                    '<td><span class="badge bg-' + statusClass + '">' + safe(s.status) + '</span>' +
+                    (s.auto_order ? ' <i class="fas fa-shopping-cart text-primary ms-2" title="Auto-order enabled"></i>' : '') + '</td>' +
+                    '</tr>';
             }).join('');
+        })
+        .catch(err => {
+            console.log('[Supply] inventory error', err);
+            document.getElementById('inventoryTableBody').innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Could not load inventory.</td></tr>';
         });
 
     fetch('/api/supply/predictions')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) { console.log('[Supply] /api/supply/predictions failed:', response.status); return null; }
+            return response.json();
+        })
         .then(predictions => {
-            const predHtml = predictions.map(p => {
-                const severityClass = p.severity === 'Critical' ? 'danger' : p.severity === 'High' ? 'warning' : 'info';
-                return `
-                    <div class="border-start border-${severityClass} border-4 p-3 mb-3 bg-light">
-                        <h6 class="mb-1"><i class="fas fa-exclamation-triangle text-${severityClass} me-2"></i>${p.item}</h6>
-                        <p class="mb-1"><strong>Shortage Date:</strong> ${p.shortage_date}</p>
-                        <p class="mb-1"><strong>Recommended Order:</strong> ${p.recommended_order}</p>
-                        <p class="mb-0"><strong>Estimated Cost:</strong> ${p.estimated_cost}</p>
-                        <button class="btn btn-sm btn-primary mt-2" onclick="alert('Auto-order placed for ${p.item}')">
-                            <i class="fas fa-cart-plus me-1"></i>Auto-Order Now
-                        </button>
-                    </div>
-                `;
+            const el = document.getElementById('shortagePredictions');
+            if (!predictions || !Array.isArray(predictions)) {
+                el.innerHTML = '<p class="text-muted mb-0">No shortage predictions available.</p>';
+                return;
+            }
+            if (predictions.length === 0) {
+                el.innerHTML = '<p class="text-muted mb-0">No shortage predictions at this time.</p>';
+                return;
+            }
+            console.log('[Supply] predictions', predictions);
+            const severityClass = p => (p.severity === 'Critical') ? 'danger' : (p.severity === 'High') ? 'warning' : 'info';
+            el.innerHTML = predictions.map(p => {
+                const sc = severityClass(p);
+                return '<div class="border-start border-' + sc + ' border-4 p-3 mb-3 bg-light">' +
+                    '<h6 class="mb-1"><i class="fas fa-exclamation-triangle text-' + sc + ' me-2"></i>' + safe(p.item) + '</h6>' +
+                    '<p class="mb-1"><strong>Shortage Date:</strong> ' + safe(p.shortage_date) + '</p>' +
+                    '<p class="mb-1"><strong>Recommended Order:</strong> ' + safe(p.recommended_order) + '</p>' +
+                    '<p class="mb-0"><strong>Estimated Cost:</strong> ' + safe(p.estimated_cost) + '</p>' +
+                    '<button class="btn btn-sm btn-primary mt-2" onclick="alert(\'Auto-order placed for ' + (p.item || 'item') + '\')"><i class="fas fa-cart-plus me-1"></i>Auto-Order Now</button>' +
+                    '</div>';
             }).join('');
-            document.getElementById('shortagePredictions').innerHTML = predHtml;
+        })
+        .catch(err => {
+            console.log('[Supply] predictions error', err);
+            document.getElementById('shortagePredictions').innerHTML = '<p class="text-muted mb-0">Could not load shortage predictions.</p>';
         });
 
     fetch('/api/supply/trend')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) { console.log('[Supply] /api/supply/trend failed:', response.status); return null; }
+            return response.json();
+        })
         .then(trend => {
             const canvas = document.getElementById('usageTrendChart');
-            const wrap = canvas.closest('.supply-chain-chart-inner');
+            const wrap = canvas ? canvas.closest('.supply-chain-chart-inner') : null;
             if (!wrap) return;
+            if (!trend || !Array.isArray(trend) || trend.length === 0) {
+                wrap.innerHTML = '<div class="d-flex align-items-center justify-content-center h-100 text-muted">No usage trend data available.</div>';
+                return;
+            }
+            console.log('[Supply] trend', trend);
             const w = wrap.offsetWidth;
             const h = 380;
             canvas.setAttribute('width', w);
@@ -163,36 +213,20 @@ function loadSupplyData() {
             new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: trend.map(d => d.date),
+                    labels: trend.map(d => (d && d.date != null) ? d.date : '—'),
                     datasets: [
-                        {
-                            label: 'PPE Kits',
-                            data: trend.map(d => d.ppe),
-                            borderColor: '#0d6efd',
-                            tension: 0.4
-                        },
-                        {
-                            label: 'IV Fluids',
-                            data: trend.map(d => d.iv_fluids),
-                            borderColor: '#198754',
-                            tension: 0.4
-                        },
-                        {
-                            label: 'Oxygen Cylinders',
-                            data: trend.map(d => d.oxygen),
-                            borderColor: '#dc3545',
-                            tension: 0.4
-                        }
+                        { label: 'PPE Kits', data: trend.map(d => (d && typeof d.ppe === 'number') ? d.ppe : 0), borderColor: '#0d6efd', tension: 0.4 },
+                        { label: 'IV Fluids', data: trend.map(d => (d && typeof d.iv_fluids === 'number') ? d.iv_fluids : 0), borderColor: '#198754', tension: 0.4 },
+                        { label: 'Oxygen Cylinders', data: trend.map(d => (d && typeof d.oxygen === 'number') ? d.oxygen : 0), borderColor: '#dc3545', tension: 0.4 }
                     ]
                 },
-                options: {
-                    responsive: false,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top' }
-                    }
-                }
+                options: { responsive: false, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } }
             });
+        })
+        .catch(err => {
+            console.log('[Supply] trend error', err);
+            const wrap = document.getElementById('usageTrendChart') && document.getElementById('usageTrendChart').closest('.supply-chain-chart-inner');
+            if (wrap) wrap.innerHTML = '<div class="d-flex align-items-center justify-content-center h-100 text-muted">Could not load usage trend.</div>';
         });
 }
 

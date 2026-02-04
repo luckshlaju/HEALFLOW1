@@ -133,19 +133,33 @@ def api_queue_sim():
     result["prob_no_wait"] = calculate_probability_no_wait(ar, sr, s)
     return jsonify(result)
 
-@app.route("/api/beds/allocate")
+@app.route("/api/beds/allocate", methods=["POST"])
 def api_beds_allocate():
-    output = []
+    recommendations = []
+
     for dept, total, occupied in get_bed_allocation():
-        util = (occupied / total) * 100 if total else 0
-        output.append({
+        utilization = (occupied / total) * 100 if total else 0
+
+        if utilization > 85:
+            rec = f"Add 5–10 beds (Critical: {utilization:.1f}%)"
+        elif utilization > 70:
+            rec = f"Consider adding 3–5 beds ({utilization:.1f}%)"
+        elif utilization < 40:
+            rec = f"Reallocate beds ({utilization:.1f}%)"
+        else:
+            rec = f"Optimal ({utilization:.1f}%)"
+
+        recommendations.append({
             "department": dept,
             "total_beds": total,
             "occupied_beds": occupied,
             "available_beds": total - occupied,
-            "utilization": round(util, 1),
+            "utilization": round(utilization, 1),
+            "recommendation": rec
         })
-    return jsonify(output)
+
+    return jsonify(recommendations)
+
 
 @app.route("/api/overview/stats")
 def api_overview():
@@ -162,6 +176,50 @@ def api_overview():
             {"department": d, "count": c} for d, c in get_patient_data()
         ],
     })
+# -------------------- RESOURCE EXCHANGE APIs --------------------
+
+@app.route("/api/resources/network", methods=["GET"])
+def api_resource_network():
+    return jsonify(get_hospital_network())
+
+@app.route("/api/resources/available", methods=["GET"])
+def api_resources_available():
+    return jsonify(get_available_resources())
+
+@app.route("/api/resources/mine", methods=["GET"])
+def api_resources_mine():
+    return jsonify(get_my_shareable_resources())
+
+@app.route("/api/resources/requests", methods=["GET"])
+def api_resources_requests():
+    return jsonify(get_resource_requests())
+
+
+# -------------------- SUPPLY CHAIN APIs --------------------
+
+@app.route("/api/supply/inventory", methods=["GET"])
+def api_supply_inventory():
+    return jsonify(get_supply_inventory())
+
+@app.route("/api/supply/predictions", methods=["GET"])
+def api_supply_predictions():
+    return jsonify(get_supply_predictions())
+
+@app.route("/api/supply/stats", methods=["GET"])
+def api_supply_stats():
+    stats = get_supply_statistics()
+    return jsonify({
+        "totalItems": stats["total_items"],
+        "criticalItems": stats["critical_items"],
+        "autoOrders": stats["auto_orders_pending"],
+        "monthlySpend": stats["monthly_spend"],
+    })
+
+
+@app.route("/api/supply/trend", methods=["GET"])
+def api_supply_trend():
+    return jsonify(get_usage_trend())
+
 
 @app.route("/api/surge/events")
 def api_surge_events():
@@ -172,3 +230,6 @@ def api_surge_stats():
     stats = get_surge_statistics()
     stats["weather"] = get_weather_impact()
     return jsonify(stats)
+if __name__ == "__main__":
+    app.run(debug=True)
+

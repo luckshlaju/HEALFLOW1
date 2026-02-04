@@ -68,95 +68,114 @@
 
 {% block extra_js %}
 <script>
+function safe(val) { return (val !== undefined && val !== null && val !== '') ? val : '—'; }
+
 function loadResourceData() {
     fetch('/api/resources/network')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) { console.log('[Resources] /api/resources/network failed:', response.status); return null; }
+            return response.json();
+        })
         .then(hospitals => {
-            const networkHtml = hospitals.map(h => `
-                <div class="p-2 mb-2 ${h.is_current ? 'bg-primary text-white' : 'bg-light'} rounded">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <strong>${h.name}</strong>
-                            <br><small>${h.location} • ${h.distance}</small>
-                        </div>
-                        <span class="badge ${h.is_current ? 'bg-light text-primary' : 'bg-success'}">${h.status}</span>
-                    </div>
-                </div>
-            `).join('');
-            document.getElementById('hospitalNetwork').innerHTML = networkHtml;
+            const el = document.getElementById('hospitalNetwork');
+            if (!hospitals || !Array.isArray(hospitals)) {
+                el.innerHTML = '<p class="text-muted mb-0">No hospital network data available.</p>';
+                return;
+            }
+            if (hospitals.length === 0) {
+                el.innerHTML = '<p class="text-muted mb-0">No hospitals in network.</p>';
+                return;
+            }
+            console.log('[Resources] network', hospitals);
+            el.innerHTML = hospitals.map(h => {
+                const cls = h.is_current ? 'bg-primary text-white' : 'bg-light';
+                const badgeCls = h.is_current ? 'bg-light text-primary' : 'bg-success';
+                return '<div class="p-2 mb-2 ' + cls + ' rounded"><div class="d-flex justify-content-between align-items-center"><div><strong>' + safe(h.name) + '</strong><br><small>' + safe(h.location) + ' • ' + safe(h.distance) + '</small></div><span class="badge ' + badgeCls + '">' + safe(h.status) + '</span></div></div>';
+            }).join('');
+        })
+        .catch(err => {
+            console.log('[Resources] network error', err);
+            document.getElementById('hospitalNetwork').innerHTML = '<p class="text-muted mb-0">Could not load hospital network.</p>';
         });
 
     fetch('/api/resources/available')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) { console.log('[Resources] /api/resources/available failed:', response.status); return null; }
+            return response.json();
+        })
         .then(resources => {
             const tbody = document.getElementById('resourcesTableBody');
-            tbody.innerHTML = resources.map(r => `
-                <tr>
-                    <td>${r.hospital_name}</td>
-                    <td><span class="badge bg-info">${r.resource_type}</span></td>
-                    <td>${r.quantity}</td>
-                    <td><span class="badge bg-success">${r.availability}</span></td>
-                    <td>${r.distance}</td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" onclick="alert('Request sent to ${r.hospital_name}')">
-                            <i class="fas fa-paper-plane me-1"></i>Request
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
+            if (!resources || !Array.isArray(resources)) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No resource data available.</td></tr>';
+                return;
+            }
+            if (resources.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No available resources from network.</td></tr>';
+                return;
+            }
+            console.log('[Resources] available', resources);
+            tbody.innerHTML = resources.map(r => '<tr><td>' + safe(r.hospital_name) + '</td><td><span class="badge bg-info">' + safe(r.resource_type) + '</span></td><td>' + safe(r.quantity) + '</td><td><span class="badge bg-success">' + safe(r.availability) + '</span></td><td>' + safe(r.distance) + '</td><td><button class="btn btn-sm btn-primary" onclick="alert(\'Request sent to ' + (r.hospital_name || 'hospital') + '\')"><i class="fas fa-paper-plane me-1"></i>Request</button></td></tr>').join('');
+        })
+        .catch(err => {
+            console.log('[Resources] available error', err);
+            document.getElementById('resourcesTableBody').innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">Could not load available resources.</td></tr>';
         });
 
     fetch('/api/resources/mine')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) { console.log('[Resources] /api/resources/mine failed:', response.status); return null; }
+            return response.json();
+        })
         .then(resources => {
+            const el = document.getElementById('myResources');
+            if (!resources || !Array.isArray(resources)) {
+                el.innerHTML = '<p class="text-muted mb-0">No shareable resources data available.</p>';
+                return;
+            }
+            if (resources.length === 0) {
+                el.innerHTML = '<p class="text-muted mb-0">No shareable resources to display.</p>';
+                return;
+            }
+            console.log('[Resources] mine', resources);
             const myHtml = resources.map(r => {
-                const percentage = (r.available / r.total * 100).toFixed(0);
+                const total = (r.total != null && r.total !== '') ? Number(r.total) : 0;
+                const available = (r.available != null && r.available !== '') ? Number(r.available) : 0;
+                const percentage = total > 0 ? Math.min(100, (available / total * 100)).toFixed(0) : 0;
                 const statusClass = percentage > 50 ? 'success' : percentage > 20 ? 'warning' : 'danger';
-                return `
-                    <div class="col-md-3 mb-3">
-                        <div class="card">
-                            <div class="card-body">
-                                <h6>${r.resource_type}</h6>
-                                <p class="mb-1">Available: <strong>${r.available}</strong> / ${r.total}</p>
-                                <div class="progress mb-2">
-                                    <div class="progress-bar bg-${statusClass}" style="width: ${percentage}%"></div>
-                                </div>
-                                <small class="text-muted">${r.status}</small>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                return '<div class="col-md-3 mb-3"><div class="card"><div class="card-body"><h6>' + safe(r.resource_type) + '</h6><p class="mb-1">Available: <strong>' + safe(r.available) + '</strong> / ' + safe(r.total) + '</p><div class="progress mb-2"><div class="progress-bar bg-' + statusClass + '" style="width: ' + percentage + '%"></div></div><small class="text-muted">' + safe(r.status) + '</small></div></div></div>';
             }).join('');
-            document.getElementById('myResources').innerHTML = '<div class="row">' + myHtml + '</div>';
+            el.innerHTML = '<div class="row">' + myHtml + '</div>';
+        })
+        .catch(err => {
+            console.log('[Resources] mine error', err);
+            document.getElementById('myResources').innerHTML = '<p class="text-muted mb-0">Could not load shareable resources.</p>';
         });
 
     fetch('/api/resources/requests')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) { console.log('[Resources] /api/resources/requests failed:', response.status); return null; }
+            return response.json();
+        })
         .then(requests => {
-            if (requests.length === 0) {
-                document.getElementById('resourceRequests').innerHTML = '<p class="text-muted">No pending requests</p>';
-            } else {
-                const reqHtml = requests.map(req => {
-                    const urgencyClass = req.urgency === 'High' ? 'danger' : 'warning';
-                    return `
-                        <div class="border-start border-${urgencyClass} border-4 p-3 mb-2 bg-light">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h6 class="mb-1">${req.from_hospital}</h6>
-                                    <p class="mb-1">Requests: <strong>${req.quantity} ${req.resource}</strong></p>
-                                    <p class="mb-1 text-muted">${req.reason}</p>
-                                    <small class="text-muted">${req.time}</small>
-                                </div>
-                                <div>
-                                    <button class="btn btn-sm btn-success me-1" onclick="alert('Request approved')">Approve</button>
-                                    <button class="btn btn-sm btn-danger" onclick="alert('Request declined')">Decline</button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-                document.getElementById('resourceRequests').innerHTML = reqHtml;
+            const el = document.getElementById('resourceRequests');
+            if (!requests || !Array.isArray(requests)) {
+                el.innerHTML = '<p class="text-muted mb-0">No request data available.</p>';
+                return;
             }
+            if (requests.length === 0) {
+                el.innerHTML = '<p class="text-muted mb-0">No pending requests.</p>';
+                return;
+            }
+            console.log('[Resources] requests', requests);
+            const reqHtml = requests.map(req => {
+                const urgencyClass = req.urgency === 'High' ? 'danger' : 'warning';
+                return '<div class="border-start border-' + urgencyClass + ' border-4 p-3 mb-2 bg-light"><div class="d-flex justify-content-between align-items-start"><div><h6 class="mb-1">' + safe(req.from_hospital) + '</h6><p class="mb-1">Requests: <strong>' + safe(req.quantity) + ' ' + safe(req.resource) + '</strong></p><p class="mb-1 text-muted">' + safe(req.reason) + '</p><small class="text-muted">' + safe(req.time) + '</small></div><div><button class="btn btn-sm btn-success me-1" onclick="alert(\'Request approved\')">Approve</button><button class="btn btn-sm btn-danger" onclick="alert(\'Request declined\')">Decline</button></div></div></div>';
+            }).join('');
+            el.innerHTML = reqHtml;
+        })
+        .catch(err => {
+            console.log('[Resources] requests error', err);
+            document.getElementById('resourceRequests').innerHTML = '<p class="text-muted mb-0">Could not load incoming requests.</p>';
         });
 }
 
