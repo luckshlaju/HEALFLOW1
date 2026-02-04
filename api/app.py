@@ -58,9 +58,13 @@ app = Flask(
 
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret")
 
-# Initialize DB safely (Vercel-safe)
+# Initialize DB safely (Vercel-safe: init_db is no-op when FORCE_DEMO)
 if not os.path.exists("/tmp/hospital.db"):
     init_db()
+
+@app.route("/health")
+def health():
+    return "OK", 200
 
 # -------------------- PAGES --------------------
 
