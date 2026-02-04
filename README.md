@@ -106,5 +106,3 @@ HealFlow uses a modular structure:
 ---
 
 *HealFlow – Predict. Optimize. Care.*
-=======
-# HEALFLOW
