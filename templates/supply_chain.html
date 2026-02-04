@@ -1,0 +1,201 @@
+{% extends "layout_dashboard.html" %}
+{% block nav_title %}Predictive Supply Chain Assistant{% endblock %}
+
+{% block main_content %}
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm healflow-card healflow-kpi-card bg-primary text-white">
+            <div class="card-body">
+                <h6 class="card-title">Total Items</h6>
+                <h2 id="totalItems">-</h2>
+                <i class="fas fa-boxes fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm healflow-card healflow-kpi-card bg-danger text-white">
+            <div class="card-body">
+                <h6 class="card-title">Critical Items</h6>
+                <h2 id="criticalItems">-</h2>
+                <i class="fas fa-exclamation-circle fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm healflow-card healflow-kpi-card bg-warning text-white">
+            <div class="card-body">
+                <h6 class="card-title">Auto-Orders Pending</h6>
+                <h2 id="autoOrders">-</h2>
+                <i class="fas fa-shopping-cart fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm healflow-card healflow-kpi-card bg-success text-white">
+            <div class="card-body">
+                <h6 class="card-title">Monthly Spend</h6>
+                <h2 id="monthlySpend">-</h2>
+                <i class="fas fa-dollar-sign fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm healflow-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-chart-line me-2"></i>Usage Trend (Last 7 Days)
+                </h5>
+                <div class="healflow-chart-wrap supply-chain-chart" style="height: 380px; overflow: hidden;">
+                    <div class="supply-chain-chart-inner" style="height: 380px; position: relative;">
+                        <canvas id="usageTrendChart" style="display: block; width: 100% !important; height: 380px !important;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm healflow-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-warehouse me-2"></i>Current Inventory
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-hover healflow-table" id="inventoryTable">
+                        <thead class="table-primary">
+                            <tr>
+                                <th>Item</th>
+                                <th>Stock</th>
+                                <th>Days Left</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm healflow-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-bell me-2"></i>Shortage Predictions
+                </h5>
+                <div id="shortagePredictions"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function loadSupplyData() {
+    fetch('/api/supply/stats')
+        .then(response => response.json())
+        .then(stats => {
+            document.getElementById('totalItems').textContent = stats.total_items;
+            document.getElementById('criticalItems').textContent = stats.critical_items;
+            document.getElementById('autoOrders').textContent = stats.auto_orders_pending;
+            document.getElementById('monthlySpend').textContent = stats.monthly_spend;
+        });
+
+    fetch('/api/supply/inventory')
+        .then(response => response.json())
+        .then(supplies => {
+            const tbody = document.getElementById('inventoryTableBody');
+            tbody.innerHTML = supplies.map(s => {
+                const statusClass = s.status === 'Critical' ? 'danger' : s.status === 'Low' ? 'warning' : 'success';
+                return `
+                    <tr>
+                        <td>
+                            <strong>${s.name}</strong>
+                            <br><small class="text-muted">${s.supplier}</small>
+                        </td>
+                        <td>${s.current_stock} / ${s.min_required}</td>
+                        <td><span class="badge bg-${statusClass}">${s.days_remaining} days</span></td>
+                        <td>
+                            <span class="badge bg-${statusClass}">${s.status}</span>
+                            ${s.auto_order ? '<i class="fas fa-shopping-cart text-primary ms-2" title="Auto-order enabled"></i>' : ''}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        });
+
+    fetch('/api/supply/predictions')
+        .then(response => response.json())
+        .then(predictions => {
+            const predHtml = predictions.map(p => {
+                const severityClass = p.severity === 'Critical' ? 'danger' : p.severity === 'High' ? 'warning' : 'info';
+                return `
+                    <div class="border-start border-${severityClass} border-4 p-3 mb-3 bg-light">
+                        <h6 class="mb-1"><i class="fas fa-exclamation-triangle text-${severityClass} me-2"></i>${p.item}</h6>
+                        <p class="mb-1"><strong>Shortage Date:</strong> ${p.shortage_date}</p>
+                        <p class="mb-1"><strong>Recommended Order:</strong> ${p.recommended_order}</p>
+                        <p class="mb-0"><strong>Estimated Cost:</strong> ${p.estimated_cost}</p>
+                        <button class="btn btn-sm btn-primary mt-2" onclick="alert('Auto-order placed for ${p.item}')">
+                            <i class="fas fa-cart-plus me-1"></i>Auto-Order Now
+                        </button>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('shortagePredictions').innerHTML = predHtml;
+        });
+
+    fetch('/api/supply/trend')
+        .then(response => response.json())
+        .then(trend => {
+            const canvas = document.getElementById('usageTrendChart');
+            const wrap = canvas.closest('.supply-chain-chart-inner');
+            if (!wrap) return;
+            const w = wrap.offsetWidth;
+            const h = 380;
+            canvas.setAttribute('width', w);
+            canvas.setAttribute('height', h);
+            const ctx = canvas.getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: trend.map(d => d.date),
+                    datasets: [
+                        {
+                            label: 'PPE Kits',
+                            data: trend.map(d => d.ppe),
+                            borderColor: '#0d6efd',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'IV Fluids',
+                            data: trend.map(d => d.iv_fluids),
+                            borderColor: '#198754',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Oxygen Cylinders',
+                            data: trend.map(d => d.oxygen),
+                            borderColor: '#dc3545',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: false,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' }
+                    }
+                }
+            });
+        });
+}
+
+window.addEventListener('load', loadSupplyData);
+</script>
+{% endblock %}

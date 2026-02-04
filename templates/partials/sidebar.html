@@ -1,0 +1,36 @@
+<div class="healflow-sidebar text-white" id="sidebar-wrapper">
+    <div class="sidebar-heading text-center py-4 fw-bold border-bottom border-secondary">
+        <a href="/dashboard" class="text-white text-decoration-none d-flex align-items-center justify-content-center">
+            <i class="fas fa-heartbeat me-2"></i>HealFlow
+        </a>
+    </div>
+    <nav class="list-group list-group-flush sidebar-nav">
+        <a href="/dashboard" class="list-group-item list-group-item-action sidebar-link {{ 'active' if request.path == '/dashboard' else '' }}">
+            <i class="fas fa-th-large me-2"></i>Dashboard
+        </a>
+        <a href="/overview" class="list-group-item list-group-item-action sidebar-link {{ 'active' if request.path == '/overview' else '' }}">
+            <i class="fas fa-tachometer-alt me-2"></i>Overview
+        </a>
+        <a href="/prediction" class="list-group-item list-group-item-action sidebar-link {{ 'active' if request.path == '/prediction' else '' }}">
+            <i class="fas fa-chart-line me-2"></i>Patient Flow Prediction
+        </a>
+        <a href="/queue" class="list-group-item list-group-item-action sidebar-link {{ 'active' if request.path == '/queue' else '' }}">
+            <i class="fas fa-clock me-2"></i>Queue Simulation
+        </a>
+        <a href="/allocation" class="list-group-item list-group-item-action sidebar-link {{ 'active' if request.path == '/allocation' else '' }}">
+            <i class="fas fa-bed me-2"></i>Bed & Staff Allocation
+        </a>
+        <a href="/surge-predictor" class="list-group-item list-group-item-action sidebar-link {{ 'active' if request.path == '/surge-predictor' else '' }}">
+            <i class="fas fa-bolt me-2"></i>Emergency Surge Predictor
+        </a>
+        <a href="/resource-exchange" class="list-group-item list-group-item-action sidebar-link {{ 'active' if request.path == '/resource-exchange' else '' }}">
+            <i class="fas fa-network-wired me-2"></i>Resource Exchange
+        </a>
+        <a href="/supply-chain" class="list-group-item list-group-item-action sidebar-link {{ 'active' if request.path == '/supply-chain' else '' }}">
+            <i class="fas fa-boxes me-2"></i>Supply Chain
+        </a>
+        <a href="/" class="list-group-item list-group-item-action sidebar-link {{ 'active' if request.path == '/' else '' }}">
+            <i class="fas fa-home me-2"></i>Back to Home
+        </a>
+    </nav>
+</div>

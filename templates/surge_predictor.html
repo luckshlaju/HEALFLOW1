@@ -1,0 +1,132 @@
+{% extends "layout_dashboard.html" %}
+{% block nav_title %}AI Emergency Surge Predictor (ESP){% endblock %}
+
+{% block main_content %}
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm healflow-card healflow-kpi-card bg-danger text-white">
+            <div class="card-body">
+                <h6 class="card-title">Total Predicted Cases</h6>
+                <h2 id="totalCases">-</h2>
+                <i class="fas fa-exclamation-triangle fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm healflow-card healflow-kpi-card bg-warning text-white">
+            <div class="card-body">
+                <h6 class="card-title">High Risk Events</h6>
+                <h2 id="highRisk">-</h2>
+                <i class="fas fa-fire fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm healflow-card healflow-kpi-card bg-info text-white">
+            <div class="card-body">
+                <h6 class="card-title">Weather Impact</h6>
+                <h2 id="weatherCondition">-</h2>
+                <i class="fas fa-cloud fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm healflow-card healflow-kpi-card bg-success text-white">
+            <div class="card-body">
+                <h6 class="card-title">Preparation Score</h6>
+                <h2 id="prepScore">-</h2>
+                <i class="fas fa-shield-alt fa-2x opacity-50"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm healflow-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-bell me-2"></i>Upcoming Surge Events
+                </h5>
+                <div id="surgeEvents"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card shadow-sm healflow-card">
+            <div class="card-body">
+                <h5 class="card-title">Weather Impact Analysis</h5>
+                <div id="weatherImpact" class="text-center py-3"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm healflow-card">
+            <div class="card-body">
+                <h5 class="card-title">Departments on Alert</h5>
+                <div id="alertDepartments"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function loadSurgeData() {
+    fetch('/api/surge/events')
+        .then(response => response.json())
+        .then(events => {
+            const eventsHtml = events.map(event => {
+                const severityClass = event.severity === 'High' ? 'danger' : event.severity === 'Medium' ? 'warning' : 'info';
+                return `
+                    <div class="border-start border-${severityClass} border-4 p-3 mb-3 bg-light">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h6 class="mb-1"><i class="fas fa-bolt text-${severityClass} me-2"></i>${event.type}</h6>
+                                <p class="mb-1 text-muted"><i class="fas fa-map-marker-alt me-2"></i>${event.location} • <i class="fas fa-clock me-2"></i>${event.time_to_event}</p>
+                                <p class="mb-1"><strong>Predicted Cases:</strong> ${event.predicted_cases} (${event.case_types})</p>
+                                <p class="mb-0"><strong>Departments:</strong> ${event.departments_affected.join(', ')}</p>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="alert alert-${severityClass} mb-0">
+                                    <strong>Action:</strong><br>${event.recommendation}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('surgeEvents').innerHTML = eventsHtml;
+        });
+
+    fetch('/api/surge/stats')
+        .then(response => response.json())
+        .then(stats => {
+            document.getElementById('totalCases').textContent = stats.total_predicted_cases;
+            document.getElementById('highRisk').textContent = stats.high_risk_events;
+            document.getElementById('weatherCondition').textContent = stats.weather.condition;
+            document.getElementById('prepScore').textContent = stats.preparation_score + '%';
+            
+            const weatherHtml = `
+                <div class="p-4">
+                    <h3>${stats.weather.condition}</h3>
+                    <p class="lead mb-2">Impact on Patients: ${stats.weather.impact.cases}</p>
+                    <p class="text-muted">${stats.weather.impact.types}</p>
+                </div>
+            `;
+            document.getElementById('weatherImpact').innerHTML = weatherHtml;
+            
+            const deptHtml = stats.departments_on_alert.map(dept => 
+                `<span class="badge bg-danger me-2 mb-2">${dept}</span>`
+            ).join('');
+            document.getElementById('alertDepartments').innerHTML = '<div class="p-3">' + deptHtml + '</div>';
+        });
+}
+
+window.addEventListener('load', loadSurgeData);
+</script>
+{% endblock %}

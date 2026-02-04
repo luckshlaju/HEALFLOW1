@@ -1,0 +1,113 @@
+{% extends "layout_dashboard.html" %}
+{% block nav_title %}Patient Flow Prediction{% endblock %}
+
+{% block main_content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm healflow-card">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-brain me-2"></i>AI-Powered Patient Inflow Prediction
+                </h5>
+                <p class="text-muted">Predict patient inflow for the next 7 days across all departments</p>
+                <button class="btn btn-primary" onclick="runPrediction()">
+                    <i class="fas fa-play me-2"></i>Run Prediction
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm healflow-card">
+            <div class="card-body">
+                <h5 class="card-title">Predicted Patients - Next 7 Days</h5>
+                <div class="healflow-chart-wrap"><div id="predictionChart"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-sm healflow-card">
+            <div class="card-body">
+                <h5 class="card-title">Department-wise Prediction Table</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover healflow-table" id="predictionTable">
+                        <thead class="table-primary">
+                            <tr>
+                                <th>Department</th>
+                                <th>Day 1</th>
+                                <th>Day 2</th>
+                                <th>Day 3</th>
+                                <th>Day 4</th>
+                                <th>Day 5</th>
+                                <th>Day 6</th>
+                                <th>Day 7</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="predictionTableBody">
+                            <tr>
+                                <td colspan="9" class="text-center text-muted">Click "Run Prediction" to generate forecasts</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function runPrediction() {
+    fetch('/api/predict/all')
+        .then(response => response.json())
+        .then(data => {
+            const dates = data.dates;
+            const predictions = data.predictions;
+            
+            const traces = [];
+            for (const [dept, values] of Object.entries(predictions)) {
+                traces.push({
+                    x: dates,
+                    y: values,
+                    type: 'scatter',
+                    mode: 'lines+markers',
+                    name: dept
+                });
+            }
+            
+            const layout = {
+                xaxis: { title: 'Date' },
+                yaxis: { title: 'Predicted Patients' },
+                hovermode: 'closest',
+                height: 380,
+                margin: { t: 40, r: 40, b: 50, l: 50 },
+                autosize: false
+            };
+            const config = { responsive: true };
+            Plotly.newPlot('predictionChart', traces, layout, config);
+            
+            const tbody = document.getElementById('predictionTableBody');
+            tbody.innerHTML = '';
+            
+            for (const [dept, values] of Object.entries(predictions)) {
+                const total = values.reduce((a, b) => a + b, 0);
+                const row = `
+                    <tr>
+                        <td><strong>${dept}</strong></td>
+                        ${values.map(v => `<td>${v}</td>`).join('')}
+                        <td><strong>${total}</strong></td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            }
+        });
+}
+</script>
+{% endblock %}

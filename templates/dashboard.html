@@ -1,0 +1,65 @@
+{% extends "layout_dashboard.html" %}
+{% block nav_title %}Hospital Dashboard{% endblock %}
+
+{% block main_content %}
+<div class="alert alert-info py-2 mb-3 mb-md-4 d-flex align-items-center" role="alert">
+    <i class="fas fa-info-circle me-2"></i>
+    <span><strong>Prototype – simulated data for demonstration.</strong></span>
+</div>
+<h2 class="mb-4">Welcome to HealFlow Dashboard</h2>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm healflow-card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-chart-bar fa-4x text-primary mb-3"></i>
+                <h4>Select a Module from the Sidebar</h4>
+                <p class="text-muted">Choose from Patient Flow Prediction, Queue Simulation, Bed Allocation, or System Overview</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100 healflow-card healflow-quick-card">
+            <div class="card-body text-center">
+                <i class="fas fa-user-injured fa-2x text-primary mb-2"></i>
+                <h6 class="text-muted">Quick Access</h6>
+                <h5>Patient Flow</h5>
+                <a href="/prediction" class="btn btn-sm btn-outline-primary mt-2">View</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100 healflow-card healflow-quick-card">
+            <div class="card-body text-center">
+                <i class="fas fa-hourglass-half fa-2x text-info mb-2"></i>
+                <h6 class="text-muted">Quick Access</h6>
+                <h5>Queue Analysis</h5>
+                <a href="/queue" class="btn btn-sm btn-outline-info mt-2">View</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100 healflow-card healflow-quick-card">
+            <div class="card-body text-center">
+                <i class="fas fa-bed fa-2x text-success mb-2"></i>
+                <h6 class="text-muted">Quick Access</h6>
+                <h5>Bed Allocation</h5>
+                <a href="/allocation" class="btn btn-sm btn-outline-success mt-2">View</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100 healflow-card healflow-quick-card">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-pie fa-2x text-warning mb-2"></i>
+                <h6 class="text-muted">Quick Access</h6>
+                <h5>Overview</h5>
+                <a href="/overview" class="btn btn-sm btn-outline-warning mt-2">View</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
