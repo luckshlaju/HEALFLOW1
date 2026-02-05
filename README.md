@@ -1,5 +1,6 @@
 # HealFlow – AI-Based Hospital Flow Optimization System
 
+**Live demo:** [https://heal-flow-vlpr.vercel.app/](https://heal-flow-vlpr.vercel.app/)
 
 ---
 
@@ -24,7 +25,7 @@ HealFlow uses a modular structure:
 - **Backend:** Flask API for predictions, queue simulation, bed allocation, surge and supply data  
 - **Frontend:** Admin dashboard with shared layout, sidebar navigation, and responsive UI  
 - **Data layer:** SQLite for departments, patients, beds, staff; deterministic datasets for prototype  
-- **Deployment:** Web app (e.g. Vercel); structure supports future cloud and mobile use  
+- **Deployment:** [Vercel](https://heal-flow-vlpr.vercel.app/); structure supports future cloud and mobile use  
 
 ## Repository Structure
 
@@ -74,6 +75,14 @@ HealFlow uses a modular structure:
    ```
    Or: `python api/app.py`
 5. Open **http://localhost:5000** in your browser.
+
+## Live Deployment
+
+The app is deployed on Vercel and available at:
+
+**https://heal-flow-vlpr.vercel.app/**
+
+*(Prototype – simulated data for demonstration.)*
 
 ## Future Enhancements
 
