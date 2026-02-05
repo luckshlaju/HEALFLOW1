@@ -63,55 +63,49 @@
 
 {% block extra_js %}
 <script>
+function safeNum(val, fallback) { return (val !== undefined && val !== null && val !== '') ? val : (fallback != null ? fallback : '—'); }
+
 function loadOverviewStats() {
     fetch('/api/overview/stats')
-        .then(response => response.json())
+        .then(response => response.ok ? response.json() : null)
         .then(data => {
-            document.getElementById('totalPatients').textContent = data.total_patients;
-            document.getElementById('avgWait').textContent = data.avg_wait_time + ' min';
-            document.getElementById('bedOccupancy').textContent = data.bed_occupancy + '%';
-            document.getElementById('staffEfficiency').textContent = data.staff_efficiency + '%';
-            
-            const pieData = [{
-                values: data.patient_distribution.map(d => d.count),
-                labels: data.patient_distribution.map(d => d.department),
-                type: 'pie',
-                hole: 0.4
-            }];
-            
-            const pieLayout = {
-                showlegend: true,
-                height: 380,
-                margin: { t: 20, r: 20, b: 20, l: 20 },
-                autosize: false
-            };
-            Plotly.newPlot('patientDistChart', pieData, pieLayout, { responsive: false });
-            
-            const ctx = document.getElementById('trendChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                    datasets: [{
-                        label: 'Bed Occupancy %',
-                        data: [65, 72, 68, 75, 80, 78, 70],
-                        borderColor: '#0d6efd',
-                        tension: 0.4
-                    }, {
-                        label: 'Staff Utilization %',
-                        data: [70, 75, 73, 78, 82, 80, 75],
-                        borderColor: '#198754',
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top' }
-                    }
+            if (!data) return;
+            var totalPatientsEl = document.getElementById('totalPatients');
+            var avgWaitEl = document.getElementById('avgWait');
+            var bedOccupancyEl = document.getElementById('bedOccupancy');
+            var staffEfficiencyEl = document.getElementById('staffEfficiency');
+            if (totalPatientsEl) totalPatientsEl.textContent = safeNum(data.total_patients);
+            var waitVal = data.avg_wait_time ?? data.avgWaitTime;
+            if (avgWaitEl) avgWaitEl.textContent = (waitVal !== undefined && waitVal !== null && waitVal !== '') ? (Number(waitVal) + ' min') : '—';
+            if (bedOccupancyEl) bedOccupancyEl.textContent = (data.bed_occupancy != null && data.bed_occupancy !== '') ? (Number(data.bed_occupancy) + '%') : '—';
+            if (staffEfficiencyEl) staffEfficiencyEl.textContent = (data.staff_efficiency != null && data.staff_efficiency !== '') ? (Number(data.staff_efficiency) + '%') : '—';
+
+            var dist = data.patient_distribution || data.patientDistribution;
+            if (dist && Array.isArray(dist) && dist.length > 0) {
+                var pieEl = document.getElementById('patientDistChart');
+                if (pieEl && typeof Plotly !== 'undefined') {
+                    var pieData = [{ values: dist.map(function(d) { return d.count; }), labels: dist.map(function(d) { return d.department || d.name || '—'; }), type: 'pie', hole: 0.4 }];
+                    var pieLayout = { showlegend: true, height: 380, margin: { t: 20, r: 20, b: 20, l: 20 }, autosize: false };
+                    Plotly.newPlot('patientDistChart', pieData, pieLayout, { responsive: false });
                 }
-            });
+            }
+
+            var trendEl = document.getElementById('trendChart');
+            if (trendEl && typeof Chart !== 'undefined') {
+                var ctx = trendEl.getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                        datasets: [{ label: 'Bed Occupancy %', data: [65, 72, 68, 75, 80, 78, 70], borderColor: '#0d6efd', tension: 0.4 }, { label: 'Staff Utilization %', data: [70, 75, 73, 78, 82, 80, 75], borderColor: '#198754', tension: 0.4 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } }
+                });
+            }
+        })
+        .catch(function() {
+            var avgWaitEl = document.getElementById('avgWait');
+            if (avgWaitEl) avgWaitEl.textContent = '—';
         });
 }
 

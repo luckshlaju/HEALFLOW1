@@ -29,11 +29,14 @@ HealFlow uses a modular structure:
 ## Repository Structure
 
 ```
-├── app.py              # Flask app and API routes
+├── app.py              # Local run entry point (python app.py)
+├── api/
+│   └── app.py          # Flask app and API routes (used by Vercel and app.py)
 ├── models/             # Data and logic (database, inflow, queue, surge, supply, resources)
 ├── static/             # CSS and JS
 ├── templates/          # HTML (base, layout_dashboard, partials, page templates)
 ├── requirements.txt
+├── vercel.json         # Vercel deployment config
 ├── README.md
 └── .gitignore
 ```
@@ -65,10 +68,11 @@ HealFlow uses a modular structure:
    ```bash
    pip install -r requirements.txt
    ```
-4. Start the app:
+4. Start the app (from project root):
    ```bash
    python app.py
    ```
+   Or: `python api/app.py`
 5. Open **http://localhost:5000** in your browser.
 
 ## Future Enhancements

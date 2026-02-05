@@ -7,75 +7,75 @@ from datetime import datetime, timedelta
 
 
 def get_supply_inventory():
-    """Current medical supply inventory."""
     return [
         {
             "id": 1,
             "name": "PPE Kits (N95 Masks)",
-            "currentStock": 380,
-            "minRequired": 1000,
-            "dailyUsage": 95,
-            "daysRemaining": 4,
+            "current_stock": 380,
+            "min_required": 1000,
+            "daily_usage": 95,
+            "days_remaining": 4,
             "status": "Critical",
-            "autoOrder": True,
+            "auto_order": True,
             "supplier": "MedSupply Co.",
         },
         {
             "id": 2,
             "name": "Surgical Gloves",
-            "currentStock": 2500,
-            "minRequired": 2000,
-            "dailyUsage": 250,
-            "daysRemaining": 10,
+            "current_stock": 2500,
+            "min_required": 2000,
+            "daily_usage": 250,
+            "days_remaining": 10,
             "status": "Good",
-            "autoOrder": False,
+            "auto_order": False,
             "supplier": "HealthCare Supplies Inc.",
         },
         {
             "id": 3,
             "name": "IV Fluids (Saline)",
-            "currentStock": 220,
-            "minRequired": 500,
-            "dailyUsage": 48,
-            "daysRemaining": 5,
+            "current_stock": 220,
+            "min_required": 500,
+            "daily_usage": 48,
+            "days_remaining": 5,
             "status": "Low",
-            "autoOrder": True,
+            "auto_order": True,
             "supplier": "Pharma Direct",
         },
         {
             "id": 4,
             "name": "Antibiotics (Amoxicillin)",
-            "currentStock": 620,
-            "minRequired": 400,
-            "dailyUsage": 38,
-            "daysRemaining": 12,
+            "current_stock": 620,
+            "min_required": 400,
+            "daily_usage": 38,
+            "days_remaining": 12,
             "status": "Good",
-            "autoOrder": False,
+            "auto_order": False,
             "supplier": "MediPharm Ltd.",
         },
         {
             "id": 5,
             "name": "Oxygen Cylinders",
-            "currentStock": 22,
-            "minRequired": 50,
-            "dailyUsage": 10,
-            "daysRemaining": 2,
+            "current_stock": 22,
+            "min_required": 50,
+            "daily_usage": 10,
+            "days_remaining": 2,
             "status": "Critical",
-            "autoOrder": True,
+            "auto_order": True,
             "supplier": "OxygenTech",
         },
         {
             "id": 6,
             "name": "Syringes (Disposable)",
-            "currentStock": 6200,
-            "minRequired": 3000,
-            "dailyUsage": 480,
-            "daysRemaining": 12,
+            "current_stock": 6200,
+            "min_required": 3000,
+            "daily_usage": 480,
+            "days_remaining": 12,
             "status": "Good",
-            "autoOrder": False,
+            "auto_order": False,
             "supplier": "MedSupply Co.",
         },
     ]
+
 
 
 def get_supply_predictions():
@@ -107,14 +107,14 @@ def get_supply_predictions():
 
 
 def get_supply_statistics():
-    """Top summary cards."""
     return {
-        "totalItems": 6,
-        "criticalItems": 2,
-        "autoOrdersPending": 4,
-        "monthlySpend": 52400,
-        "wastageReduction": 15,
+        "total_items": 6,
+        "critical_items": 2,
+        "auto_orders_pending": 4,
+        "monthly_spend": "$52,400",
+        "wastage_reduction": "15%",
     }
+
 
 
 def get_usage_trend():

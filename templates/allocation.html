@@ -62,56 +62,47 @@
 {% block extra_js %}
 <script>
 function optimizeAllocation() {
-    fetch('/api/beds/allocate', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({})
-    })
-    .then(response => response.json())
-    .then(data => {
-        const tbody = document.getElementById('allocationTableBody');
-        tbody.innerHTML = '';
-        
-        const departments = [];
-        const utilizations = [];
-        
-        data.forEach(dept => {
-            const utilizationClass = dept.utilization > 85 ? 'text-danger' : dept.utilization > 70 ? 'text-warning' : 'text-success';
-            const row = `
-                <tr>
-                    <td><strong>${dept.department}</strong></td>
-                    <td>${dept.total_beds}</td>
-                    <td>${dept.occupied_beds}</td>
-                    <td>${dept.available_beds}</td>
-                    <td><span class="${utilizationClass}">${dept.utilization}%</span></td>
-                    <td>${dept.recommendation}</td>
-                </tr>
-            `;
-            tbody.innerHTML += row;
-            
-            departments.push(dept.department);
-            utilizations.push(dept.utilization);
-        });
-        
-        const chartData = [{
-            x: departments,
-            y: utilizations,
-            type: 'bar',
-            marker: {
-                color: utilizations.map(u => u > 85 ? '#dc3545' : u > 70 ? '#ffc107' : '#198754')
+    var tbody = document.getElementById('allocationTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Loading…</td></tr>';
+
+    fetch('/api/beds/allocate')
+        .then(function(response) {
+            if (!response.ok) throw new Error('Request failed: ' + response.status);
+            return response.json();
+        })
+        .then(function(data) {
+            if (!Array.isArray(data) || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No allocation data available.</td></tr>';
+                return;
             }
-        }];
-        
-        const layout = {
-            yaxis: { title: 'Utilization (%)', range: [0, 100] },
-            title: 'Department Bed Utilization',
-            height: 380,
-            margin: { t: 50, r: 40, b: 80, l: 60 },
-            autosize: false
-        };
-        const config = { responsive: true };
-        Plotly.newPlot('utilizationChart', chartData, layout, config);
-    });
+            tbody.innerHTML = '';
+            var departments = [];
+            var utilizations = [];
+            data.forEach(function(dept) {
+                var utilizationClass = dept.utilization > 85 ? 'text-danger' : dept.utilization > 70 ? 'text-warning' : 'text-success';
+                var rec = (dept.recommendation != null && dept.recommendation !== '') ? dept.recommendation : '—';
+                tbody.innerHTML += '<tr>' +
+                    '<td><strong>' + (dept.department || '—') + '</strong></td>' +
+                    '<td>' + (dept.total_beds != null ? dept.total_beds : '—') + '</td>' +
+                    '<td>' + (dept.occupied_beds != null ? dept.occupied_beds : '—') + '</td>' +
+                    '<td>' + (dept.available_beds != null ? dept.available_beds : '—') + '</td>' +
+                    '<td><span class="' + utilizationClass + '">' + (dept.utilization != null ? dept.utilization : '—') + '%</span></td>' +
+                    '<td>' + rec + '</td></tr>';
+                departments.push(dept.department || '—');
+                utilizations.push(typeof dept.utilization === 'number' ? dept.utilization : 0);
+            });
+            var chartEl = document.getElementById('utilizationChart');
+            if (chartEl && typeof Plotly !== 'undefined') {
+                var chartData = [{ x: departments, y: utilizations, type: 'bar', marker: { color: utilizations.map(function(u) { return u > 85 ? '#dc3545' : u > 70 ? '#ffc107' : '#198754'; }) } }];
+                var layout = { yaxis: { title: 'Utilization (%)', range: [0, 100] }, title: 'Department Bed Utilization', height: 380, margin: { t: 50, r: 40, b: 80, l: 60 }, autosize: false };
+                Plotly.newPlot('utilizationChart', chartData, layout, { responsive: true });
+            }
+        })
+        .catch(function(err) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Could not load data. Try again.</td></tr>';
+            console.error('Allocation error:', err);
+        });
 }
 </script>
 {% endblock %}
