@@ -114,8 +114,5 @@ The app is deployed on Vercel and available at:
 
  (Information Technology Students)
 
-**Team CheatCode** – HackElite DNS'26
-
----
 
 *HealFlow – Predict. Optimize. Care.*
