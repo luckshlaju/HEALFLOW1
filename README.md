@@ -106,12 +106,6 @@ The app is deployed on Vercel and available at:
 
  **Harikishanth R**
 
- **Mohamed Mubashir**
-
- **Mohamed Ashiq Omar**
-
- **Naveen Raj** 
-
  (Information Technology Students)
 
 
