@@ -435,6 +435,3 @@ Information Technology Student
 ## 🏷️ Project Tagline
 
 **HealFlow – Predict. Optimize. Care.**
-
-```
-```
